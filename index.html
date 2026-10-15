@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FreshMart Ethiopia</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f7f5;color:#222}
+header{background:#087b43;color:white;padding:18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{font-size:25px;font-weight:bold}
+.nav-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+button{cursor:pointer;border:0;border-radius:7px;padding:11px}
+.lang-select{padding:10px;border-radius:7px;border:0;font-weight:bold;background:white;color:#087b43;cursor:pointer}
+.cartbtn{background:white;color:#087b43;font-weight:bold}
+.hero{text-align:center;background:#dcfce7;padding:28px 12px}
+.hero h1{color:#087b43}
+.search{width:min(95%,500px);padding:13px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+main{max-width:1200px;margin:auto;padding:18px}
+.categories{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
+.categories button{background:white;border:1px solid #087b43}
+.categories button.active{background:#087b43;color:white}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px}
+.product{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px #00000010;display:flex;flex-direction:column}
+.photo{height:105px;background:#f0fdf4;display:grid;place-items:center;font-size:52px;border-radius:8px}
+.product h3{font-size:16px;margin:12px 0 5px}
+.muted{color:#777;font-size:13px}
+.price{color:#087b43;font-weight:bold;font-size:18px;margin:10px 0}
+.add{background:#087b43;color:white;margin-top:auto}
+.panel{background:white;border-radius:12px;padding:18px;margin-top:22px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eee}
+.qty button{background:#eee;padding:7px 11px}
+input,select,textarea{width:100%;padding:12px;margin:6px 0 14px;border:1px solid #ccc;border-radius:7px;font:inherit}
+label{font-weight:bold;font-size:14px}
+.paybox{background:#f0fdf4;padding:13px;border-radius:9px;margin:12px 0}
+.submit{width:100%;background:#f59e0b;color:#222;font-weight:bold;font-size:16px;margin-top:10px}
+.notice{background:#fff7ed;padding:12px;border-radius:8px;font-size:13px;line-height:1.6}
+footer{text-align:center;background:#123b28;color:white;padding:24px;margin-top:30px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🛒 FreshMart Ethiopia</div>
+  <div class="nav-actions">
+    <!-- Language Selection Dropdown -->
+    <select id="langSelect" class="lang-select" aria-label="Select Language">
+      <optgroup label="🇪🇹 Ethiopian Languages">
+        <option value="am" selected>አማርኛ </option>
+        <option value="om">Afaan Oromoo</option>
+        <option value="ti">ትግርኛ </option>
+        <option value="so">Soomaali</option>
+      </optgroup>
+      <optgroup label="🌐 International Languages">
+        <option value="en">🇬🇧 English</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="de">🇩🇪 Deutsch</option>
+      </optgroup>
+    </select>
+
+    <button class="cartbtn" onclick="document.getElementById('cart').scrollIntoView({behavior:'smooth'})">
+      🛍️ <span id="txt-cart-btn">Cart</span> (<span id="count">0</span>)
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1 id="txt-hero-title">Fresh Products, Better Prices!</h1>
+  <p id="txt-hero-sub">የምትፈልገውን ምርት በቀላሉ ግዛ።</p>
+  <input class="search" id="search" placeholder="Search products..." aria-label="Search products">
+</section>
+
+<main>
+  <h2 id="txt-prod-head">🛍️ Our Products</h2>
+  <div class="categories" id="categories"></div>
+  <div class="products" id="products"></div>
+
+  <section class="panel" id="cart">
+    <h2 id="txt-cart-head">🛒 Shopping Cart</h2>
+    <div id="cartItems"></div>
+    <h3><span id="txt-subtotal">Subtotal</span>: <span id="total">0.00 ETB</span></h3>
+    <button class="submit" id="btn-checkout" onclick="goCheckout()">Proceed to Checkout</button>
+  </section>
+
+  <section class="panel" id="checkout" hidden>
+    <h2 id="txt-checkout-head">📦 Checkout</h2>
+    <form id="orderForm">
+      <label for="customer" id="lbl-name">Full Name</label>
+      <input id="customer" required placeholder="Your full name">
+
+      <label for="phone" id="lbl-phone">Phone</label>
+      <input id="phone" type="tel" required placeholder="09xxxxxxxx">
+
+      <label for="address" id="lbl-address">Delivery Address</label>
+      <textarea id="address" required placeholder="City, area, house or delivery details"></textarea>
+
+      <label for="delivery" id="lbl-delivery">Delivery option</label>
+      <select id="delivery">
+        <option value="Delivery" id="opt-home">Home delivery</option>
+        <option value="Pickup" id="opt-pickup">Store pickup</option>
+      </select>
+
+      <label for="payment" id="lbl-payment">Payment method</label>
+      <select id="payment" required>
+        <option value="Telebirr">Telebirr</option>
+        <option value="Bank Transfer" id="opt-bank">Bank Transfer</option>
+        <option value="Cash on Delivery" id="opt-cod">Cash on Delivery</option>
+      </select>
+
+      <div class="paybox" id="telebirrBox">
+        <strong>📱 Telebirr</strong>
+        <p id="txt-telebirr-note">የTelebirr ክፍያ ለመፈጸም የንግድ ክፍያ ሲስተም መገናኘት ያስፈልጋል።</p>
+      </div>
+
+      <div class="paybox" id="bankBox" hidden>
+        <strong id="lbl-select-bank">🏦 Select Bank</strong>
+        <select id="bank">
+          <option value="" id="opt-choose-bank">Select your bank</option>
+          <option>Commercial Bank of Ethiopia</option>
+          <option>Awash Bank</option>
+          <option>Dashen Bank</option>
+          <option>Bank of Abyssinia</option>
+          <option>Wegagen Bank</option>
+          <option>Hibret Bank</option>
+          <option>Nib International Bank</option>
+          <option>Cooperative Bank of Oromia</option>
+          <option>Oromia Bank</option>
+          <option>Zemen Bank</option>
+          <option>Berhan Bank</option>
+          <option>Enat Bank</option>
+          <option>Abay Bank</option>
+          <option>Addis International Bank</option>
+          <option>Amhara Bank</option>
+          <option>Hijra Bank</option>
+          <option>Shabelle Bank</option>
+          <option>Siinqee Bank</option>
+          <option>Goh Betoch Bank</option>
+          <option>Rammis Bank</option>
+          <option>Other bank</option>
+        </select>
+        <p class="muted" id="txt-bank-note">ይህ የባንክ ምርጫ ብቻ ነው፤ የባንክ ክፍያ ማረጋገጫ አያደርግም።</p>
+      </div>
+
+      <div class="notice">
+        <strong id="txt-demo-title">Demo payment</strong><br>
+        <span id="txt-demo-desc">ይህ ድረ-ገጽ ገና ከTelebirr ወይም ከባንኮች የክፍያ ሲስተም ጋር አልተገናኘም። የክፍያ የይለፍ ቃል፣ PIN ወይም OTP አታስገባ።</span>
+      </div>
+
+      <h3><span id="txt-total">Total</span>: <span id="checkoutTotal">0.00 ETB</span></h3>
+      <button class="submit" type="submit" id="btn-order">Place Demo Order</button>
+    </form>
+    <div id="message" role="status"></div>
+  </section>
+</main>
+
+<footer>
+  <h3>FreshMart Ethiopia 🛒</h3>
+  <p id="txt-footer-tag">Quality Products • Great Prices • Friendly Service</p>
+  <small id="txt-footer-sub">Demo store. Prices are examples in Ethiopian birr.</small>
+  <p>&copy; All right reserved!</p>
+</footer>
+
+<script>
+const translations = {
+  am: {
+    cartBtn: "ቅርጫት",
+    heroTitle: "አዲስ ምርቶች፣ የተሻሉ ዋጋዎች!",
+    heroSub: "የምትፈልገውን ምርት በቀላሉ ግዛ።",
+    searchPlaceholder: "ምርት ፈልግ...",
+    productsHeading: "🛍️ ምርቶቻችን",
+    cartHeading: "🛒 የግዢ ቅርጫት",
+    subtotal: "ድምር",
+    checkoutBtn: "ወደ ክፍያ ሂድ",
+    checkoutHeading: "📦 የትዕዛዝ መረጃ",
+    name: "ሙሉ ስም",
+    phone: "ስልክ ቁጥር",
+    address: "አድራሻ",
+    delivery: "የማድረሻ አማራጭ",
+    homeDelivery: "ወደ ቤት",
+    pickup: "ከሱቅ መውሰድ",
+    payment: "የክፍያ ዘዴ",
+    bankTransfer: "የባንክ ክፍያ",
+    cod: "በማድረስ ጊዜ",
+    selectBank: "🏦 ባንክ ምረጥ",
+    chooseBank: "ባንክዎን ይምረጡ",
+    addCart: "+ ወደ ቅርጫት ጨምር",
+    emptyCart: "ቅርጫቱ ባዶ ነው።",
+    noProducts: "ምርት አልተገኘም።",
+    total: "ጠቅላላ",
+    placeOrder: "ትዕዛዝ አስገባ",
+    allCat: "ሁሉም",
+    catFruits: "ፍራፍሬዎች",
+    catVeg: "አትክልቶች",
+    catDairy: "የወተት ተዋጽኦዎች",
+    catBakery: "ዳቦና ኬክ",
+    catGrains: "እህልና ጥራጥሬ",
+    catDrinks: "መጠጦች",
+    catMeat: "ስጋና ዓሣ",
+    catClean: "የጽዳት ዕቃዎች",
+    catPersonal: "የግል እንክብካቤ",
+    catPantry: "የማብሰያ ዕቃዎች"
+  },
+  en: {
+    cartBtn: "Cart",
+    heroTitle: "Fresh Products, Better Prices!",
+    heroSub: "Buy what you need easily.",
+    searchPlaceholder: "Search products...",
+    productsHeading: "🛍️ Our Products",
+    cartHeading: "🛒 Shopping Cart",
+    subtotal: "Subtotal",
+    checkoutBtn: "Proceed to Checkout",
+    checkoutHeading: "📦 Checkout",
+    name: "Full Name",
+    phone: "Phone Number",
+    address: "Delivery Address",
+    delivery: "Delivery Option",
+    homeDelivery: "Home Delivery",
+    pickup: "Store Pickup",
+    payment: "Payment Method",
+    bankTransfer: "Bank Transfer",
+    cod: "Cash on Delivery",
+    selectBank: "🏦 Select Bank",
+    chooseBank: "Select your bank",
+    addCart: "+ Add to Cart",
+    emptyCart: "Your cart is empty.",
+    noProducts: "No products found.",
+    total: "Total",
+    placeOrder: "Place Demo Order",
+    allCat: "All",
+    catFruits: "Fruits",
+    catVeg: "Vegetables",
+    catDairy: "Dairy",
+    catBakery: "Bakery",
+    catGrains: "Grains",
+    catDrinks: "Drinks",
+    catMeat: "Meat",
+    catClean: "Cleaning",
+    catPersonal: "Personal Care",
+    catPantry: "Pantry"
+  },
+  om: {
+    cartBtn: "Kaniisa",
+    heroTitle: "Oomishaalee Haaraa, Gatii Gaarii!",
+    heroSub: "Wanta barbaaddu salphaatti bitadhu.",
+    searchPlaceholder: "Oomisha barbaadi...",
+    productsHeading: "🛍️ Oomishaalee Keenya",
+    cartHeading: "🛒 Kaniisa Bitannaa",
+    subtotal: "Ida'ama",
+    checkoutBtn: "Gara Kafaltitti Caaqi",
+    checkoutHeading: "📦 Odeeffannoo Ajaja",
+    name: "Maqaa Guutuu",
+    phone: "Lakk. Bilbilaa",
+    address: "Teessoo Geessisaa",
+    delivery: "Filannoo Geessisaa",
+    homeDelivery: "Gara Manaa",
+    pickup: "Suuqii irraa fudhachu",
+    payment: "Mala Kafaltii",
+    bankTransfer: "Kafaltii Baankii",
+    cod: "Yeroo fudhattanii",
+    selectBank: "🏦 Baankii Filadhu",
+    chooseBank: "Baankii keessan filadhaa",
+    addCart: "+ Gara Kaniisaatti Dabali",
+    emptyCart: "Kaniisni keessan duudaadha.",
+    noProducts: "Oomishni hin argamne.",
+    total: "Ida'ama Guutuu",
+    placeOrder: "Ajaja Ergi",
+    allCat: "Hunda",
+    catFruits: "Ija Mukaa",
+    catVeg: "Kuduraa",
+    catDairy: "Aannan",
+    catBakery: "Daabboo",
+    catGrains: "Midhaan",
+    catDrinks: "Dhugaatii",
+    catMeat: "Foon",
+    catClean: "Qulqullina",
+    catPersonal: "Eegumsa Qaamaa",
+    catPantry: "Mi'eessituu"
+  },
+  ti: {
+    cartBtn: "ዓሪፍ",
+    heroTitle: "ሓደሽቲ ፍርያት፣ ዝሓሸ ዋጋ!",
+    heroSub: "ዝደለኻዮ ፍርያት ብቐሊሉ  myዛእ።",
+    searchPlaceholder: "ፍርያት ደልይ...",
+    productsHeading: "🛍️ ፍርያትና",
+    cartHeading: "🛒 ናይ ዕደላ ዓሪፍ",
+    subtotal: "ድምር",
+    checkoutBtn: "ናብ ክፍሊት ቀጽል",
+    checkoutHeading: "📦 ሓበሬታ ትእዛዝ",
+    name: "ምሉእ ስም",
+    phone: "ቁጽሪ ስልኪ",
+    address: "ኣድራሻ",
+    delivery: "ምርጫ ምብጻሕ",
+    homeDelivery: "ናብ ገዛ",
+    pickup: "ካብ ድኳን ምውሳድ",
+    payment: "ዓይነት ክፍሊት",
+    bankTransfer: "ብባንኪ",
+    cod: "ኣብ ምብጻሕ ክፍሊት",
+    selectBank: "🏦 ባንኪ  myረፅ",
+    chooseBank: "ባንክኻ ሕረይ",
+    addCart: "+ ናብ ዓሪፍ ወስኽ",
+    emptyCart: "ዓሪፍካ ባዶ እዩ።",
+    noProducts: "ዝተረኽበ ፍርያት የለን።",
+    total: "ጠቕላላ",
+    placeOrder: "ትእዛዝ ኣእትው",
+    allCat: "ኩሉ",
+    catFruits: "ፍረታታት",
+    catVeg: "ሕውስዋስ",
+    catDairy: "ጸባን ውጽኢቱን",
+    catBakery: "ሕብስቲ",
+    catGrains: "እክሊ",
+    catDrinks: "መስተ",
+    catMeat: "ስጋን ዓሳን",
+    catClean: "ጽሬት",
+    catPersonal: "ክንክን ኣካል",
+    catPantry: "መግቢ መሰናድሒ"
+  },
+  so: {
+    cartBtn: "Karto",
+    heroTitle: "Alaab Cusub, Price Wanaagsan!",
+    heroSub: "Si fudud u ianso waxaad u baahan tahay.",
+    searchPlaceholder: "Raha alaabta...",
+    productsHeading: "🛍️ Alaabtayada",
+    cartHeading: "🛒 Kartada Gadashada",
+    subtotal: "Wadar hoose",
+    checkoutBtn: "U gudub Bixinta",
+    checkoutHeading: "📦 Xogta Dalabka",
+    name: "Magaca Buuxa",
+    phone: "Lambarka Telefoonka",
+    address: "Cinwaanka Geeynta",
+    delivery: "Chambarka Geeynta",
+    homeDelivery: "Guriga",
+    pickup: "Dukaanka ka qaado",
+    payment: "Habka Bixinta",
+    bankTransfer: "Xawaalad Baank",
+    cod: "Lacag bixinta markaad helsho",
+    selectBank: "🏦 Dooro Baanka",
+    chooseBank: "Dooro baankaaga",
+    addCart: "+ Ku dar Kartada",
+    emptyCart: "Kartadaadu waa madhan tahay.",
+    noProducts: "Alaab ma lagu helin.",
+    total: "Wadarta",
+    placeOrder: "Dir Dalabka",
+    allCat: "Dhammaan",
+    catFruits: "Midhaha",
+    catVeg: "Khضradka",
+    catDairy: "Caanaha",
+    catBakery: "Roti",
+    catGrains: "Muufo & Badar",
+    catDrinks: "C cabitaan",
+    catMeat: "Hilib",
+    catClean: "Nadiifinta",
+    catPersonal: "Daryeelka Shaqsiga",
+    catPantry: "Jiko"
+  },
+  fr: {
+    cartBtn: "Panier",
+    heroTitle: "Produits Frais, Meilleurs Prix!",
+    heroSub: "Achetez facilement ce dont vous avez besoin.",
+    searchPlaceholder: "Rechercher...",
+    productsHeading: "🛍️ Nos Produits",
+    cartHeading: "🛒 Panier",
+    subtotal: "Sous-total",
+    checkoutBtn: "Passer à la caisse",
+    checkoutHeading: "📦 Commande",
+    name: "Nom complet",
+    phone: "Téléphone",
+    address: "Adresse de livraison",
+    delivery: "Mode de livraison",
+    homeDelivery: "Livraison à domicile",
+    pickup: "Retrait en magasin",
+    payment: "Mode de paiement",
+    bankTransfer: "Virement bancaire",
+    cod: "Paiement à la livraison",
+    selectBank: "🏦 Choisir la banque",
+    chooseBank: "Sélectionnez votre banque",
+    addCart: "+ Ajouter au panier",
+    emptyCart: "Votre panier est vide.",
+    noProducts: "Aucun produit trouvé.",
+    total: "Total",
+    placeOrder: "Commander",
+    allCat: "Tous",
+    catFruits: "Fruits",
+    catVeg: "Légumes",
+    catDairy: "Produits Laitiers",
+    catBakery: "Boulangerie",
+    catGrains: "Céréales",
+    catDrinks: "Boissons",
+    catMeat: "Viandes",
+    catClean: "Nettoyage",
+    catPersonal: "Soins Personnels",
+    catPantry: "Épicerie"
+  },
+  ar: {
+    cartBtn: "السلة",
+    heroTitle: "منتجات طازجة وأسعار أفضل!",
+    heroSub: "اشترِ ما تحتاجه بسبولة.",
+    searchPlaceholder: "البحث عن منتجات...",
+    productsHeading: "🛍️ منتجاتنا",
+    cartHeading: "🛒 سلة التسوق",
+    subtotal: "المجموع الفرعي",
+    checkoutBtn: "متابعة الدفع",
+    checkoutHeading: "📦 تفاصيل الطلب",
+    name: "الاسم الكامل",
+    phone: "رقم الهاتف",
+    address: "عنوان التوصيل",
+    delivery: "خيار التوصيل",
+    homeDelivery: "التوصيل للمنزل",
+    pickup: "الاستلام من المتجر",
+    payment: "طريقة الدفع",
+    bankTransfer: "تحويل بنكي",
+    cod: "الدفع عند الاستلام",
+    selectBank: "🏦 اختر البنك",
+    chooseBank: "اختر البنك الخاص بك",
+    addCart: "+ أضف إلى السلة",
+    emptyCart: "سلة التسوق فارغة.",
+    noProducts: "لم يتم العثور على منتجات.",
+    total: "المجموع الكلي",
+    placeOrder: "إرسال الطلب",
+    allCat: "الكل",
+    catFruits: "الفواكه",
+    catVeg: "الخضروات",
+    catDairy: "منتجات الألبان",
+    catBakery: "المخبوزات",
+    catGrains: "الحبوب",
+    catDrinks: "المشروبات",
+    catMeat: "اللحوم والأسماك",
+    catClean: "التنظيف",
+    catPersonal: "العناية الشخصية",
+    catPantry: "المؤن"
+  },
+  zh: {
+    cartBtn: "购物车",
+    heroTitle: "新鲜产品，超值价格！",
+    heroSub: "轻松购买所需商品。",
+    searchPlaceholder: "搜索商品...",
+    productsHeading: "🛍️ 所有商品",
+    cartHeading: "🛒 购物车",
+    subtotal: "小计",
+    checkoutBtn: "前往结账",
+    checkoutHeading: "📦 订单详情",
+    name: "姓名",
+    phone: "电话号码",
+    address: "送货地址",
+    delivery: "配送方式",
+    homeDelivery: "送货上门",
+    pickup: "到店自提",
+    payment: "支付方式",
+    bankTransfer: "银行转账",
+    cod: "货到付款",
+    selectBank: "🏦 选择银行",
+    chooseBank: "请选择您的银行",
+    addCart: "+ 加入购物车",
+    emptyCart: "您的购物车是空的。",
+    noProducts: "未找到相关商品。",
+    total: "总计",
+    placeOrder: "提交演示订单",
+    allCat: "全部",
+    catFruits: "水果",
+    catVeg: "蔬菜",
+    catDairy: "乳制品",
+    catBakery: "烘焙",
+    catGrains: "谷物",
+    catDrinks: "饮料",
+    catMeat: "肉类海鲜",
+    catClean: "清洁用品",
+    catPersonal: "个人护理",
+    catPantry: "调味粮油"
+  },
+  es: {
+    cartBtn: "Carrito",
+    heroTitle: "¡Productos Frescos, Mejores Precios!",
+    heroSub: "Compra fácilmente lo que necesitas.",
+    searchPlaceholder: "Buscar productos...",
+    productsHeading: "🛍️ Nuestros Productos",
+    cartHeading: "🛒 Carrito de Compras",
+    subtotal: "Subtotal",
+    checkoutBtn: "Proceder al Pago",
+    checkoutHeading: "📦 Pedido",
+    name: "Nombre Completo",
+    phone: "Teléfono",
+    address: "Dirección de Entrega",
+    delivery: "Opción de Entrega",
+    homeDelivery: "Entrega a domicilio",
+    pickup: "Recoger en tienda",
+    payment: "Método de Pago",
+    bankTransfer: "Transferencia Bancaria",
+    cod: "Pago contra entrega",
+    selectBank: "🏦 Seleccionar Banco",
+    chooseBank: "Selecciona tu banco",
+    addCart: "+ Agregar al Carrito",
+    emptyCart: "Tu carrito está vacío.",
+    noProducts: "No se encontraron productos.",
+    total: "Total",
+    placeOrder: "Realizar Pedido",
+    allCat: "Todos",
+    catFruits: "Frutas",
+    catVeg: "Verduras",
+    catDairy: "Lácteos",
+    catBakery: "Panadería",
+    catGrains: "Granos",
+    catDrinks: "Bebidas",
+    catMeat: "Carnes",
+    catClean: "Limpieza",
+    catPersonal: "Cuidado Personal",
+    catPantry: "Despensa"
+  },
+  de: {
+    cartBtn: "Warenkorb",
+    heroTitle: "Frische Produkte, Bessere Preise!",
+    heroSub: "Kaufen Sie einfach, was Sie brauchen.",
+    searchPlaceholder: "Produkte suchen...",
+    productsHeading: "🛍️ Unsere Produkte",
+    cartHeading: "🛒 Warenkorb",
+    subtotal: "Zwischensumme",
+    checkoutBtn: "Zur Kasse",
+    checkoutHeading: "📦 Bestellung",
+    name: "Vollständiger Name",
+    phone: "Telefonnummer",
+    address: "Lieferadresse",
+    delivery: "Lieferoption",
+    homeDelivery: "Lieferung nach Hause",
+    pickup: "Abholung im Geschäft",
+    payment: "Zahlungsmethode",
+    bankTransfer: "Banküberweisung",
+    cod: "Barzahlung bei Lieferung",
+    selectBank: "🏦 Bank Auswählen",
+    chooseBank: "Wählen Sie Ihre Bank",
+    addCart: "+ In den Warenkorb",
+    emptyCart: "Ihr Warenkorb ist leer.",
+    noProducts: "Keine Produkte gefunden.",
+    total: "Gesamt",
+    placeOrder: "Bestellung Aufgeben",
+    allCat: "Alle",
+    catFruits: "Obst",
+    catVeg: "Gemüse",
+    catDairy: "Milchprodukte",
+    catBakery: "Bäckerei",
+    catGrains: "Getreide",
+    catDrinks: "Getränke",
+    catMeat: "Fleisch & Fisch",
+    catClean: "Reinigung",
+    catPersonal: "Körperpflege",
+    catPantry: "Vorratskammer"
+  }
+};
+
+const categoryMap = {
+  "All": "allCat",
+  "Fruits": "catFruits",
+  "Vegetables": "catVeg",
+  "Dairy": "catDairy",
+  "Bakery": "catBakery",
+  "Grains": "catGrains",
+  "Drinks": "catDrinks",
+  "Meat": "catMeat",
+  "Cleaning": "catClean",
+  "Personal Care": "catPersonal",
+  "Pantry": "catPantry"
+};
+
+let currentLang = "am";
+
+function setLanguage(lang) {
+  currentLang = lang;
+  const t = translations[lang] || translations.en;
+  
+  // RTL Support for Arabic
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+  document.getElementById("txt-cart-btn").textContent = t.cartBtn;
+  document.getElementById("txt-hero-title").textContent = t.heroTitle;
+  document.getElementById("txt-hero-sub").textContent = t.heroSub;
+  document.getElementById("search").placeholder = t.searchPlaceholder;
+  document.getElementById("txt-prod-head").textContent = t.productsHeading;
+  document.getElementById("txt-cart-head").textContent = t.cartHeading;
+  document.getElementById("txt-subtotal").textContent = t.subtotal;
+  document.getElementById("btn-checkout").textContent = t.checkoutBtn;
+  document.getElementById("txt-checkout-head").textContent = t.checkoutHeading;
+  document.getElementById("lbl-name").textContent = t.name;
+  document.getElementById("lbl-phone").textContent = t.phone;
+  document.getElementById("lbl-address").textContent = t.address;
+  document.getElementById("lbl-delivery").textContent = t.delivery;
+  document.getElementById("opt-home").textContent = t.homeDelivery;
+  document.getElementById("opt-pickup").textContent = t.pickup;
+  document.getElementById("lbl-payment").textContent = t.payment;
+  document.getElementById("opt-bank").textContent = t.bankTransfer;
+  document.getElementById("opt-cod").textContent = t.cod;
+  document.getElementById("lbl-select-bank").textContent = t.selectBank;
+  document.getElementById("opt-choose-bank").textContent = t.chooseBank;
+  document.getElementById("txt-total").textContent = t.total;
+  document.getElementById("btn-order").textContent = t.placeOrder;
+
+  renderCategories();
+  renderProducts();
+  renderCart();
+}
+
+document.getElementById("langSelect").addEventListener("change", e => {
+  setLanguage(e.target.value);
+});
+
+const data = [
+["Apple","Fruits",800,"🍎","1 kg"],
+["Banana","Fruits",150,"🍌","1 kg"],
+["Orange","Fruits",250,"🍊","1 kg"],
+["Mango","Fruits",300,"🥭","1 kg"],
+["Avocado","Fruits",150,"🥑","1 kg"],
+["Lemon","Fruits",200,"🍋","1 kg"],
+["Watermelon","Fruits",150,"🍉","each"],
+["Grapes","Fruits",280,"🍇","1 kg"],
+
+["Tomato","Vegetables",100,"🍅","1 kg"],
+["Potato","Vegetables",70,"🥔","1 kg"],
+["Carrot","Vegetables",100,"🥕","1 kg"],
+["Onion","Vegetables",150,"🧅","1 kg"],
+["Cabbage","Vegetables",60,"🥬","each"],
+["Garlic","Vegetables",180,"🧄","1 kg"],
+["Green Pepper","Vegetables",120,"🫑","1 kg"],
+["Spinach","Vegetables",50,"🥬","bundle"],
+
+["Milk","Dairy",150,"🥛","1 litre"],
+["Cheese","Dairy",250,"🧀","500 g"],
+["Eggs","Dairy",25,"🥚","each"],
+["Butter","Dairy",180,"🧈","200 g"],
+["Yogurt","Dairy",100,"🥣","500 g"],
+
+["Bread","Bakery",65,"🍞","loaf"],
+["Croissant","Bakery",80,"🥐","each"],
+["Cake","Bakery",250,"🍰","slice"],
+["Cookies","Bakery",100,"🍪","pack"],
+
+["Rice","Grains",300,"🍚","1 kg"],
+["Teff","Grains",120,"🌾","1 kg"],
+["Wheat Flour","Grains",90,"🌾","1 kg"],
+["Macaroni","Grains",100,"🍝","pack"],
+["Spaghetti","Grains",110,"🍝","pack"],
+["Lentils","Grains",130,"🫘","1 kg"],
+["Chickpeas","Grains",140,"🫘","1 kg"],
+["Beans","Grains",120,"🫘","1 kg"],
+
+["Coffee","Drinks",1200,"☕","1 Kg"],
+["Tea","Drinks",70,"🍵","pack"],
+["Bottled Water","Drinks",25,"💧","bottle"],
+["Orange Juice","Drinks",100,"🧃","1 litre"],
+["Soft Drink","Drinks",75,"🥤","bottle"],
+
+["Chicken","Meat",2000,"🍗","1 kg"],
+["Beef","Meat",1800,"🥩","1 kg"],
+["Fish","Meat",350,"🐟","1 kg"],
+
+["Dish Soap","Cleaning",90,"🧼","bottle"],
+["Laundry Detergent","Cleaning",180,"🫧","pack"],
+["Bleach","Cleaning",100,"🧴","bottle"],
+["Tissue Paper","Cleaning",70,"🧻","pack"],
+["Trash Bags","Cleaning",80,"🗑️","pack"],
+
+["Toothpaste","Personal Care",100,"🪥","tube"],
+["Shampoo","Personal Care",180,"🧴","bottle"],
+["Bath Soap","Personal Care",45,"🧼","bar"],
+["Body Lotion","Personal Care",220,"🧴","bottle"],
+["Sanitary Pads","Personal Care",100,"📦","pack"],
+
+["Cooking Oil","Pantry",220,"🫒","1 litre"],
+["Salt","Pantry",30,"🧂","pack"],
+["Sugar","Pantry",100,"🍚","1 kg"],
+["Honey","Pantry",250,"🍯","jar"],
+["Peanut Butter","Pantry",200,"🥜","jar"]
+].map((p,i)=>({
+ id:i+1,name:p[0],category:p[1],price:p[2],emoji:p[3],unit:p[4]
+}));
+
+const cart = {};
+let category = "All";
+
+const rawCategories = ["All",...new Set(data.map(p=>p.category))];
+const money = n => n.toLocaleString("en-US",{
+ style:"currency",currency:"ETB"
+});
+
+function renderCategories(){
+ const box=document.getElementById("categories");
+ box.replaceChildren();
+ const t = translations[currentLang] || translations.en;
+ rawCategories.forEach(c=>{
+  const b=document.createElement("button");
+  const translationKey = categoryMap[c];
+  b.textContent = t[translationKey] || c;
+  b.className=c===category?"active":"";
+  b.onclick=()=>{category=c;renderCategories();renderProducts()};
+  box.appendChild(b);
+ });
+}
+
+function renderProducts(){
+ const box=document.getElementById("products");
+ box.replaceChildren();
+ const t = translations[currentLang] || translations.en;
+ const q=document.getElementById("search").value.toLowerCase().trim();
+ const items=data.filter(p=>
+  (category==="All"||p.category===category)&&
+  (p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q))
+ );
+ if(!items.length){
+  box.textContent=t.noProducts;
+  return;
+ }
+ items.forEach(p=>{
+  const card=document.createElement("article");
+  card.className="product";
+  const photo=document.createElement("div");
+  photo.className="photo";
+  photo.textContent=p.emoji;
+  const name=document.createElement("h3");
+  name.textContent=p.name;
+  const details=document.createElement("p");
+  details.className="muted";
+  const catTransKey = categoryMap[p.category];
+  const translatedCat = t[catTransKey] || p.category;
+  details.textContent=translatedCat+" • "+p.unit;
+  const price=document.createElement("div");
+  price.className="price";
+  price.textContent=money(p.price);
+  const button=document.createElement("button");
+  button.className="add";
+  button.textContent=t.addCart;
+  button.onclick=()=>{cart[p.id]=(cart[p.id]||0)+1;renderCart()};
+  card.append(photo,name,details,price,button);
+  box.appendChild(card);
+ });
+}
+
+function total(){
+ return data.reduce((s,p)=>s+p.price*(cart[p.id]||0),0);
+}
+
+function renderCart(){
+ const box=document.getElementById("cartItems");
+ box.replaceChildren();
+ const t = translations[currentLang] || translations.en;
+ let count=0;
+ data.forEach(p=>{
+  const n=cart[p.id]||0;
+  if(!n)return;
+  count+=n;
+  const row=document.createElement("div");
+  row.className="row";
+  const title=document.createElement("span");
+  title.textContent=p.emoji+" "+p.name+" × "+n+" = "+money(p.price*n);
+  const controls=document.createElement("div");
+  controls.className="qty";
+  [["−",-1],["+",1]].forEach(([label,change])=>{
+   const b=document.createElement("button");
+   b.textContent=label;
+   b.onclick=()=>{
+    cart[p.id]=(cart[p.id]||0)+change;
+    if(cart[p.id]<=0)delete cart[p.id];
+    renderCart();
+   };
+   controls.appendChild(b);
+  });
+  row.append(title,controls);
+  box.appendChild(row);
+ });
+ if(!count)box.textContent=t.emptyCart;
+ document.getElementById("count").textContent=count;
+ document.getElementById("total").textContent=money(total());
+ document.getElementById("checkoutTotal").textContent=money(total());
+}
+
+function goCheckout(){
+ if(!total()){alert("Please add products to your cart.");return}
+ document.getElementById("checkout").hidden=false;
+ document.getElementById("checkout").scrollIntoView({behavior:"smooth"});
+}
+
+const payment=document.getElementById("payment");
+function updatePayment(){
+ document.getElementById("telebirrBox").hidden=payment.value!=="Telebirr";
+ document.getElementById("bankBox").hidden=payment.value!=="Bank Transfer";
+ document.getElementById("bank").required=payment.value==="Bank Transfer";
+}
+payment.addEventListener("change",updatePayment);
+
+document.getElementById("search").addEventListener("input",renderProducts);
+
+document.getElementById("orderForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ if(!total()){alert("Your cart is empty.");return}
+ if(payment.value==="Bank Transfer"&&!document.getElementById("bank").value){
+  alert("Please select your bank.");return;
+ }
+ const order="FM-"+Date.now().toString().slice(-7);
+ const method=payment.value==="Bank Transfer"
+  ?document.getElementById("bank").value
+  :payment.value;
+ document.getElementById("message").innerHTML="";
+ const result=document.createElement("div");
+ result.className="paybox";
+ result.textContent="Demo order "+order+
+  " created. Total: "+money(total())+
+  ". Selected payment: "+method+
+  ". No payment has been processed. Contact the store to arrange payment.";
+ document.getElementById("message").appendChild(result);
+ Object.keys(cart).forEach(k=>delete cart[k]);
+ renderCart();
+});
+
+setLanguage("am");
+updatePayment();
+</script>
+</body>
+</html>
